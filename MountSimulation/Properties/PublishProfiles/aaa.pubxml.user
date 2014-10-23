@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+This file is used by the publish/package process of your Web project. You can customize the behavior of this process
+by editing this MSBuild file. In order to learn more about this please visit http://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>C:\temp\mount</_PublishTargetUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="bin/log4net.dll">
+      <publishTime>10/14/2014 21:10:25</publishTime>
+    </File>
+    <File Include="bin/MountSimulation.dll">
+      <publishTime>10/21/2014 19:13:47</publishTime>
+    </File>
+    <File Include="bin/RestSharp.dll">
+      <publishTime>10/14/2014 21:07:59</publishTime>
+    </File>
+    <File Include="Content/1.png">
+      <publishTime>10/21/2014 16:32:12</publishTime>
+    </File>
+    <File Include="Content/2.png">
+      <publishTime>10/21/2014 16:32:54</publishTime>
+    </File>
+    <File Include="Content/activateorg.gif">
+      <publishTime>10/21/2014 18:25:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap-theme.css">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap-theme.css.map">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap-theme.min.css">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap.css">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap.css.map">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Content/bootstrap.min.css">
+      <publishTime>10/12/2014 14:42:24</publishTime>
+    </File>
+    <File Include="packages.config">
+      <publishTime>10/14/2014 21:10:25</publishTime>
+    </File>
+    <File Include="Scripts/asdkviewer.js">
+      <publishTime>10/21/2014 18:42:14</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.0.js">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.0.min.js">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.0.min.map">
+      <publishTime>07/17/2014 06:57:44</publishTime>
+    </File>
+    <File Include="Web.config">
+      <publishTime>10/21/2014 19:13:47</publishTime>
+    </File>
+    <File Include="WebForm1.aspx">
+      <publishTime>10/21/2014 18:24:21</publishTime>
+    </File>
+  </ItemGroup>
+</Project>

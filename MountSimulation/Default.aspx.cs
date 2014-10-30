@@ -20,11 +20,14 @@ namespace MountSimulation
         RestClient _client = new RestClient(strAgigee);
         String _token = "";
 
+        //if you want to provide a default URN from server side
+        //in current version, the URN is provided in client side.
         string inputDocumentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dGVzdG53eHh4L0V4YW1wbGUubndk";
 
 
         protected void Page_Load(object sender, EventArgs e)
         { 
+            //if the URN is provided from URL
             if (Request.QueryString["myurn"] != null)
                 inputDocumentId = Request.QueryString["myurn"].ToString();
 
@@ -51,6 +54,7 @@ namespace MountSimulation
 
         }
 
+        // authenticate and produce the token
         bool authentication()
         {
             RestRequest authReq = new RestRequest();
@@ -71,6 +75,7 @@ namespace MountSimulation
                     index, len - index - 1);
                 int index2 = responseString.IndexOf("\"");
                 _token = responseString.Substring(0, index2);
+                //store the token to the control of web page.
                 viewertoken.Value = _token;
                 return true;
 

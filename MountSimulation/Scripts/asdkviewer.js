@@ -135,6 +135,7 @@ function iniMountView() {
     });
 } 
 
+//load model to orignal viewer
 function onSuccessDocumentLoadCB_org(viewerDocument) {
 
     currentViewerDoc = viewerDocument;
@@ -164,6 +165,7 @@ function onSuccessDocumentLoadCB_org(viewerDocument) {
     }
 }
 
+//load model to mounting viewer
 function onSuccessDocumentLoadCB_mount(viewerDocument) {
 
     currentViewerDoc = viewerDocument;
@@ -201,6 +203,7 @@ function onErrorDocumentLoadCB_org(viewerDocument) {
 function onErrorDocumentLoadCB_mount(viewerDocument) {
 }
 
+//build the dictionay of mounting
 function buildPlayDic_Mount() {
     if (viewer3DMount)
         viewer3DMount.getObjectTree(getObjectTreeCB_Mount);
@@ -221,6 +224,7 @@ function buildPlayDic_Mount() {
             searchTree(node, nodefrags);
             //if (thisFrags != null)
             {
+                //store all fragments and the orignal matrix (position) of one parent node
                 var mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, nodefrags[0]).matrixWorld.elements;
 
                 if (node.dbId in playDic) {
@@ -244,6 +248,7 @@ function buildPlayDic_Mount() {
     }
 }
 
+//backup function : camera changing
 function cameraChangedEventCB_Mount(evt) {
 
     if (viewer3DMount) {
@@ -256,11 +261,13 @@ function cameraChangedEventCB_Mount(evt) {
    
 }
 
+//build the play dictionary  
 function buildPlayDic_Org() {
     if (viewer3DOrg)
         viewer3DOrg.getObjectTree(getObjectTreeCB_Org);
 }
 
+//find out all fragments of one parent object
 function searchTree(element, frags) {
     if (element.fragIds != null) {
         {
@@ -284,12 +291,15 @@ function searchTree(element, frags) {
     //return null;
 }
 
+//generate the tree of the original viewer
+
 function getObjectTreeCB_Org(result) {
 
     geometryItems_children = result.children;
 
     for (i = 0; i < geometryItems_children.length; i++) {
         {
+            //hard coded. store some objects for mounting.
             allNodesOrg.push(geometryItems_children[i]);
             var thisDbId = geometryItems_children[i];
 
@@ -308,12 +318,14 @@ function getObjectTreeCB_Org(result) {
     }
 }
 
+//generate the tree of the mounting viewer
 function getObjectTreeCB_Mount(result) {
 
     geometryItems_children = result.children;
 
     for (i = 0; i < geometryItems_children.length; i++) {
         {
+            //hard coded. store some objects for mounting.
             var thisDbId = geometryItems_children[i];
 
             if (thisDbId.name == "244752:1" ||
@@ -329,81 +341,63 @@ function getObjectTreeCB_Mount(result) {
     }
 } 
 
+// move the objects away along x,y,z
 function moveaway(viewer3D, frgid) {
 
     //if (viewer3D) 
     {
-
+        //calculate the 3d coordinate from 2d data
         var camera = viewer3D.getCamera();
 
         var canvas = document.getElementById("divViewerMount");
-        var clientRect = canvas.getBoundingClientRect(); //Canvas is the HTML Canvas of the viewer instance
+        //Canvas is the HTML Canvas of the viewer instance
+        var clientRect = canvas.getBoundingClientRect(); 
         var awaylocation = new THREE.Vector2();
 
-        
+        //3d coordinates
         awaylocation.x = ((clientRect.right - clientRect.right/10) / window.innerWidth) * 2 - 1;
         awaylocation.y = -((clientRect.top + clientRect.top/10) / window.innerHeight) * 2 + 1;
 
         var awaylocationvector = new THREE.Vector3(awaylocation.x, awaylocation.y, 0.5);
         projector.unprojectVector(awaylocationvector, camera);
         
+        //move the objects one by one.
         var mtx;
         if (frgid.constructor === Array) {
+            //if a group of objects
             for (var i = 0; i < frgid.length; i++) {
                 var mtx = viewer3D.impl.getRenderProxy(viewer3D.model, frgid[i]).matrixWorld.elements;
                 mtx[12] = awaylocationvector.x;
                 mtx[13] = awaylocationvector.y;
                 mtx[14] = awaylocationvector.z;
-
-                //mtx[12] += 50;
-                //mtx[13] += 50;
-                //mtx[14] += 50;
+ 
             }
         }
         else {
-
+            //if a single object
             var mtx = viewer3D.impl.getRenderProxy(viewer3D.model, frgid).matrixWorld.elements;
-            mtx[12] += 1;
-            mtx[13] += 1;
-            mtx[14] += 1;
+            mtx[12] += awaylocationvector.x;;
+            mtx[13] += awaylocationvector.y;;
+            mtx[14] += awaylocationvector.z;;
         }
 
-
+        //ask viewer to refresh
         viewer3D.impl.invalidate(true);
     }
 
 }
 
+//selection event
 function onSelectedCallback_Mount(event) {
     var msg = '';
     if (event.dbIdArray.length > 0) {
 
-        //var selFrags = event.event.fragIdsArray;
-        //var isMovingFrag = false;
-        //if (currentfrgids.constructor === Array) {
-        //    for (var eachFrag in currentfrgids) {
-        //        for(var eachFrag_1 in selFrags)
-        //            if (eachFrag == eachFrag_1) {
-        //                isMovingFrag = true;
-        //                break;
-        //            }
-        //        if (isMovingFrag)
-        //            break;
-
-        //    }
-        //}
-        //else {
-             
-        //}
-
-        //if (!isMovingFrag)
-        //    return;
-
-        //node = event.nodeArray[0];        
+        //in moving status      
         ismoving = true;
+        //get the original position data.
         var corVs = playDic_pos[currNodesMount[currentIndex].dbId];
        
-
+        //orignal x, y, z
         stxx = corVs[0];
         styy = corVs[1];
         stzz = corVs[2];
@@ -413,8 +407,10 @@ function onSelectedCallback_Mount(event) {
 
 }
 
+//check if current position is the correct position
 function isOK() {
 
+    //check the current position of the current object
     if (viewer3DMount) {
         var mtx;
          if (currentfrgids.constructor === Array) {
@@ -424,6 +420,7 @@ function isOK() {
              mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids).matrixWorld.elements;
         }
 
+        //showing the differences of the current position with the original position
          var obj = $("#taskdiv");
          if (obj) {
 
@@ -436,22 +433,26 @@ function isOK() {
                                (Math.round(diffz * 100) / 100).toString() + ")" + "  click the component, move mouse. press key [Q] to stop the moving.";;
          }
 
+        //if the difference is much small in a tolerance, successful
         if (Math.abs(mtx[12] - stxx) < 2.0 &&
             Math.abs(mtx[13] - styy) < 2.0 &&
             Math.abs(mtx[14] - stzz) < 2.0) {
-            //alert("Mounted On Succeeded!");
+            //play an audio to cheer
             sound.src = "content/Ring10.wav";
             sound.play();
 
+            //alert message of successful mounting
             $('#alertGoodMount').modal('show');
 
             ismoving = false;
             currentfrgids = null;
 
+            //force the objects to the original position because the difference is much small
             mtx[12] = stxx;
             mtx[13] = styy;
             mtx[14] = stzz;
 
+            //remove the message of differences
             var obj = $("#taskdiv");
             if(obj)
                 obj.remove();
@@ -460,68 +461,92 @@ function isOK() {
     }
 }
 
+//move object in X with one step
 function moveX(step) {
     
+    //if not in mounting status
     if (!startMount)
         return;
+
+    //move the objects one by one with the step
     var mtx;
     if (currentfrgids.constructor === Array) {
+        //if a group of objects
         for (var i = 0; i < currentfrgids.length; i++) {
             mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids[i]).matrixWorld.elements;
             mtx[12] += step;
         }
     }
     else {
+        //if a single object
         mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids).matrixWorld.elements;
         mtx[12] += step;
 
     }
 
+    //ask viewer to refresh
     viewer3DMount.impl.invalidate(true);
 
+    //check if current position is the correct position
      isOK();
 }
 
+//move object in Y with one step
 function moveY(step) {
     
+    //if not in mounting status 
     if (!startMount)
         return;
 
+    //move the objects one by one with the step
     var mtx;
     if (currentfrgids.constructor === Array) {
+        //if a group of objects
         for (var i = 0; i < currentfrgids.length; i++) {
             mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids[i]).matrixWorld.elements;
             mtx[13] += step;
         }
     }
     else {
+        //if a single object
         mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids).matrixWorld.elements;
         mtx[13] += step;
     }
 
-
+    //ask viewer to refresh
     viewer3DMount.impl.invalidate(true);
+
+    //check if current position is the correct position
      isOK();
 }
 
+
+//move object in Z with one step
 function moveZ(step) {
   
+    //if not in mounting status 
     if (!startMount)
         return;
 
+    //move the objects one by one with the step
     var mtx;
     if (currentfrgids.constructor === Array) {
+        //if a group of objects
         for (var i = 0; i < currentfrgids.length; i++) {
             mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids[i]).matrixWorld.elements;
             mtx[14] += step;
         }
     }
     else {
+        //if a single object
         mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, currentfrgids).matrixWorld.elements;
         mtx[14] += step;
 
     }
 
+    //ask viewer to refresh
     viewer3DMount.impl.invalidate(true);
+
+    //check if current position is the correct position
      isOK();
 }

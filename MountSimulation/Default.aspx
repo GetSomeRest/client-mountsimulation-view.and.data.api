@@ -35,13 +35,13 @@
      </form> 
 
     <div id="myCarousel" class="carousel slide">
-   <!-- 轮播（Carousel）指标 -->
+   <!-- Carousel indicators -->
    <ol class="carousel-indicators">
       <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
       <li data-target="#myCarousel" data-slide-to="1"></li> 
    </ol>    
 
-   <!-- 轮播（Carousel）项目 -->
+   <!-- Carousel items -->
    <div class="carousel-inner">
       <div class="item active">
          <img src="content/1.png" alt="First slide">
@@ -50,14 +50,18 @@
            <div style="margin:0 200px; height:40px;">               
                 <div class="btn-group" data-toggle="buttons">
                        <label class="btn btn-primary" id="radioMountOff">
+                         <%--  button that switches mounting off--%>
                           <input type="radio" name="options" /> Mount Off
                        </label>
                        <label class="btn btn-primary" id="radioMountOn">
+                            <%--  button that switches mounting on--%>
                           <input type="radio" name="options" /> Mount On
                        </label> 
                  </div>
+                <%--  button that starts the next component --%>
                      <button id="btnNextComp" type="button" class="btn btn-success" >Next Comp>></button> 
-                    <div class="btn-group">                        
+                    <div class="btn-group">                   
+                         <%--  buttons that tune the moving--%>     
                          <button id="btnXPlus" type="button" onclick="moveX(0.5);" class="btn btn-info">MoveX+</button>
                         <button id="btnXMinus" type="button"  onclick="moveX(-0.5);" class="btn btn-info">MoveX-</button>
                         <button id="btnYPlus" type="button" onclick ="moveY(0.5);" class="btn btn-info">MoveY+</button>
@@ -94,10 +98,12 @@
    <a class="carousel-control right" href="#myCarousel" 
       data-slide="next">&rsaquo;</a>
 </div> 
+     <%-- audio for successful mounting--%>
      <audio controls="controls" id="sound">
           <source src="content/Ring10.wav" >
        </audio>
 
+     <%--  warning message when mounting succeeds--%>
       <div id="alertGoodMount" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -114,6 +120,7 @@
     </div>
 
 
+     <%-- warning message when mount on button is not clicked.--%>
         <div id="alertMountNotStart" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -128,6 +135,7 @@
         </div>
     </div>
 
+     <%-- warning message when orignal view has not been activated.--%>
          <div id="alertActivateOrg" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -150,10 +158,7 @@
         //************
         document.onkeypress = function (ev) {
             if (ev.keyCode == 113) {
-                //var obj = $("#taskdiv");
-                //if(obj)
-                //    obj.remove();
-
+                
                 ismoving = false;
                 viewer3DMount.impl.invalidate(true);
             }

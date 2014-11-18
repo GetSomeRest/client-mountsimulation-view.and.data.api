@@ -146,7 +146,7 @@
                 <div class="modal-header"> 
                     <h4 class="modal-title">Please firstly activate orignal model view by clicking the arrow on the top-right corner of this page, and switch back to this page again.</h4>
                 </div>  
-                <div><img src="Content/activateorg.gif" /></div>
+                <div><img style="width:400px" src="Content/activateorg.gif" /></div>
                 <div class="modal-footer"> 
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
@@ -157,12 +157,12 @@
 
        <%-- demo video.--%>
          <div id="demoHelpVideo" class="modal fade">
-        <div class="modal-dialog">
+        <div   class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header"> 
                     <h4 class="modal-title">Demo Video</h4>
                 </div>  
-                <div><img src="Content/activateorg.gif" /></div>
+                <div ><img style="width:400px" src="Content/helpvideo.gif" /></div>
                 <div class="modal-footer"> 
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>

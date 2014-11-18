@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MountSimulation", "MountSimulation\MountSimulation.csproj", "{3E8C9FE4-80C0-4187-BBB7-CB3D5C696C9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MountSimulation", "MountSimulation.csproj", "{3E8C9FE4-80C0-4187-BBB7-CB3D5C696C9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

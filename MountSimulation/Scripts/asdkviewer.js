@@ -1,15 +1,18 @@
-﻿var viewer3DOrg;
+﻿//orignal view
+var viewer3DOrg;
+//mount view
 var viewer3DMount;
-
-var currNodesOrg = [];
-var currNodesMount = [];
-
-var allNodesOrg = [];
-
+//collection of node ids of original view
+var currNodesIds_Org = [];
+//collection of nodes of mount view
+var currNodes_Mount = [];
+//mouse point of screen 
 var mouse = new THREE.Vector2();
+//projector of current view
 var projector = new THREE.Projector();
-
+//if mouse moving
 var ismoving = false;
+// object that is being mounted
 var selectedObj;
 
 var selid;
@@ -29,58 +32,317 @@ var currentIndex;
 var playDic = new Array();
 var playDic_pos = new Array();
 
-var startMount;
+var startMount = false;
 var currentfrgids = null;
 
 var currentClientX;
 var currentClientY;
 
-var currentPage = false;
-var page1 = true;
+var hasIniPageOrg = false;
+var page_mount = true;
  
-{ 
+{
 
+
+    iniMountView();
+    startMount = false;
+
+
+    //***document events**********
+    document.onkeypress = function (ev) {
+        if (ev.keyCode == 113) {
+            //stop mounting
+            ismoving = false;
+            viewer3DMount.impl.invalidate(true);
+        }
+    }
+     
+    //when mouse moving
+    document.getElementById("divViewerMount").onmousemove = function (ev) {
+        ev.preventDefault();
+
+        if (viewer3DMount) {
+
+            if (ismoving &&
+                currentfrgids && page_mount) {
+
+                //calculate the 3D coordinates from mouse position
+
+                //Canvas is the HTML Canvas of the viewer instance
+                var canvas = document.getElementById("divViewerMount");
+                //get camera
+                var camera = viewer3DMount.getCamera();
+                var clientRect = canvas.getBoundingClientRect(); 
+                mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+
+                var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                projector.unprojectVector(vector, camera);
+
+                if (lastX > 100000000 ||
+                    lastY > 100000000 ||
+                    lastZ > 100000000) {
+                    //if moving just started
+                    //since Viewer has not provided the mouse events, the sample
+                    //set a large value as the difference of coordinates.
+                    lastX = vector.x;
+                    lastY = vector.y;
+                    lastZ = vector.z;
+
+                }
+                else {
+
+                    //get the difference of the current mouse coordinates and last coordinates
+                    var difX = vector.x - lastX;
+                    var difY = vector.y - lastY;
+                    var difZ = vector.z - lastZ;
+
+                    //move the objects qith the difference values.
+                    moveX(difX);
+                    moveY(difY);
+                    moveZ(difZ);
+
+                    //record the current values for next moving.
+                    lastX = vector.x;
+                    lastY = vector.y;
+                    lastZ = vector.z;
+
+                    viewer3DMount.impl.invalidate(true);
+
+                }
+
+            }
+            else {
+                //reset the values
+                lastX = 100000000.1;
+                lastY = 100000000.1;
+                lastZ = 100000000.1;
+            }
+        }
+
+    }
+
+    //*********document events end****************
+
+    //*********buttons****************************
+    $('#btnSelectObj').click(function () {
+                
+        if (startMount) {
+            alert("Mounting is running! Please click [Mount Off] and select objects");            
+        }
+        else {
+            if (page_mount) {
+
+                if (viewer3DMount) {                   
+                    var objsToMount = viewer3DMount.getSelection();
+
+                    if (objsToMount == null || objsToMount.length == 0) {
+                        alert("no any objects have been selected!");
+                    }
+                    else {
+                        if (objsToMount != null) {
+                            currNodesIds_Org = [];
+                            currNodes_Mount = [];
+                            for (i = 0; i < objsToMount.length; i++) {
+                                var thisNode = objsToMount[i];
+                                currNodes_Mount.push(thisNode);
+                                currNodesIds_Org.push(thisNode.dbId);
+                            }
+                            buildPlayDic_Mount();
+
+                            viewer3DMount.clearSelection();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    //end mounting
+    $('#radioMountOff').click(function () {
+        if (viewer3DOrg) {
+            //show all objects in orignal view
+            viewer3DOrg.showAll();
+        }
+
+        //load mount view again thus all components are restored back to the original position. 
+        iniMountView();
+
+
+        //reset the relevant variables
+
+        ismoving = false;
+        startMount = false;
+
+        currNodes_Mount = null;
+        currNodesIds_Org = null;
+
+        currentfrgids = null;
+        playDic = null;
+        playDic = new Array();
+        playDic_pos = null;;
+        playDic_pos = new Array();
+
+        //remove the message div that appears when mounting
+        var obj = $("#taskdiv");
+        if (obj)
+            obj.remove(); 
+     
+    });
     
+    //start mounting
+    $('#radioMountOn').click(function () {
+
+        if (!hasIniPageOrg) {
+            //if the original view has not been activated 
+            $('#alertActivateOrg').modal('show');
+            return;
+        }
+ 
+        if (currNodes_Mount==null || currNodes_Mount.length == 0) {
+            alert("please select some mounting objects firstly!");
+            return;
+        }
+
+        //display a message div to show the difference of the 
+        //coordinates of the current position and original position
+        var parentdiv = $('<div></div>');
+        parentdiv.attr('id', 'taskdiv');
+        parentdiv.html("");
+
+        $(document.body).append(parentdiv);
+        $("#taskdiv")[0].style.position = "absolute";
+        $("#taskdiv")[0].style.left = "20px";
+        $("#taskdiv")[0].style.top = "100px";
+        $("#taskdiv")[0].style.zIndex = 10000;
+        $("#taskdiv")[0].innerHTML =
+            "Diff:(x= *,y=*,z=*) click the component, move mouse. press key [Q] to stop the moving.";
+
+       
+        if (viewer3DOrg) {
+            //clear the selection of original view
+            viewer3DOrg.clearSelection();
+            // in original view, select the object which is being mounted.
+            viewer3DOrg.select(currNodesIds_Org[0]);
+        }
+
+        //move the specific objects 
+        //which are to be mounted away from the main body 
+        for (thisItem in playDic) {
+            var thisFrags = playDic[thisItem];
+            moveaway(viewer3DMount, thisFrags);
+        }
+
+        //hide the objects which are not being mounted. 
+        //they are in the waiting list to be mounted
+        if (viewer3DMount) {
+            for (var i = 0; i < currNodes_Mount.length; i++) {
+                if (i != 0) {
+                    var node = currNodes_Mount[i];
+                    viewer3DMount.hide(node);
+                }
+            }
+        }
+
+        //current index of the specific objects
+        currentIndex = 0;
+        //fragments of the current specific object
+        currentfrgids = playDic[currNodes_Mount[0].dbId];
+
+        //start mounting
+        startMount = true;
+
+    });
+
+    //switch to the next mounting object
+    $('#btnNextComp').click(function () {
+
+        //remove the message div that appears when mounting
+        var obj = $("#taskdiv");
+        if (obj)
+            obj.remove();
+
+        if (!startMount) {
+            //if the original view has not been activated
+            //show the warning page
+            $('#alertMountNotStart').modal('show');
+            return;
+        }
+        if (currentfrgids) {
+            //if the mounting of last object has not completed
+            alert("The last component has not been mounted correctly!");
+            return;
+        }
+
+        if ( (currentIndex+1) == currNodes_Mount.length) {
+            alert("all components have been mounted!");
+            return;
+        }
+
+        //
+        var parentdiv = $('<div></div>');
+        parentdiv.attr('id', 'taskdiv');
+        parentdiv.html("");
+
+        $(document.body).append(parentdiv);
+        $("#taskdiv")[0].style.position = "absolute";
+        $("#taskdiv")[0].style.left = "20px";
+        $("#taskdiv")[0].style.top = "100px";
+        $("#taskdiv")[0].style.zIndex = 10000;
+        $("#taskdiv")[0].innerHTML =
+            "Diff:(x= *,y=*,z=*) click the component, move mouse. press key [Q] to stop the moving.";
+
+        currentIndex++;
+        var node = currNodes_Mount[currentIndex];
+        currentfrgids = playDic[node.dbId]; 
+
+        viewer3DOrg.clearSelection();
+        viewer3DOrg.select(currNodesIds_Org[currentIndex]);
+
+        if (viewer3DMount) {
+            var node = currNodes_Mount[currentIndex];
+            viewer3DMount.show(node);
+            currentfrgids = playDic[node.dbId];
+            startMount = true;
+        }
+
+    });  
+    
+
+    //help video
+    $('#btnHelp').click(function () {
+        $('#demoHelpVideo').modal('show');
+    });
+
     $("#myCarousel").carousel('pause');
 
     $('#myCarousel').bind('slide.bs.carousel', function (e) {
-
-        console.log('slide event!');
-        if (!currentPage) {
+ 
+        if (!hasIniPageOrg) {
             iniOrgView();
-            currentPage = true;
+            hasIniPageOrg = true;
         }
 
-    if (page1) {
+        if (page_mount) {
             var obj = $("#taskdiv");
             if (obj)
                 obj.hide();
         }
         else {
-
             var obj = $("#taskdiv");
             if (obj)
                 obj.show();
         }
 
-        page1 = !page1;
-         
-
-    });
-
-    iniMountView();
-    
-
-    startMount = false;
-
-}
-
+        page_mount = !page_mount;
+    }); 
+   
+} 
  
-
+//********functions for Viewer************
 function iniOrgView() {
-    var documentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6ZGV2ZGF5c3NhbXBsZXMvQWNjdW11bGF0b3JfbTMubndk";
-    //var documentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6ZGV2ZGF5c3NhbXBsZXMvQWNjdW11bGF0b3Iubndk";
-
+    
+    var documentId = document.getElementById("viewerDefaultURN").value;
     var thistoken = document.getElementById("viewertoken").value;
     var options = {
         'document': documentId,
@@ -105,10 +367,8 @@ function iniOrgView() {
 }
  
 function iniMountView() {
-
-    var documentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6ZGV2ZGF5c3NhbXBsZXMvQWNjdW11bGF0b3JfbTMubndk";
-    //var documentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6ZGV2ZGF5c3NhbXBsZXMvQWNjdW11bGF0b3Iubndk";
-
+     
+    var documentId = document.getElementById("viewerDefaultURN").value;
     var thistoken = document.getElementById("viewertoken").value;
     var options = {
         'document': documentId,
@@ -131,7 +391,6 @@ function iniMountView() {
  
         viewer3DMount.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT,
             onSelectedCallback_Mount);
-
     });
 } 
 
@@ -153,15 +412,11 @@ function onSuccessDocumentLoadCB_org(viewerDocument) {
         viewer3DOrg.setGhosting(true);
         viewer3DOrg.addEventListener(
               Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
-              function (event) {
-                  buildPlayDic_Org();
-              });
-
-
-        //console.log("Loading 3d Geometry from document : " + documentId);
+              function (event) { 
+                  viewer3DOrg.fitToView(false);
+              }); 
     }
-    else {
-        //console.log("3d Geometry not found in document : " + documentId);
+    else { 
     }
 }
 
@@ -183,17 +438,12 @@ function onSuccessDocumentLoadCB_mount(viewerDocument) {
         viewer3DMount.setGhosting(true);
         viewer3DMount.addEventListener(
             Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
-            function (event) {
-                buildPlayDic_Mount();
-            });
-
-        //camara event
-  viewer3DMount.addEventListener(Autodesk.Viewing.CAMERA_CHANGE_EVENT, cameraChangedEventCB_Mount);
-
-        //console.log("Loading 3d Geometry from document : " + documentId);
+            function (event) { 
+                viewer3DMount.fitToView(false);
+            }); 
     }
     else {
-        //console.log("3d Geometry not found in document : " + documentId);
+         console.log("3d Geometry not found in document : " + documentId);
     }
 }
 
@@ -204,9 +454,7 @@ function onErrorDocumentLoadCB_mount(viewerDocument) {
 }
 
 //build the dictionay of mounting
-function buildPlayDic_Mount() {
-    if (viewer3DMount)
-        viewer3DMount.getObjectTree(getObjectTreeCB_Mount);
+function buildPlayDic_Mount() { 
 
     var mesh = viewer3DMount.impl.model.getData();
     var frgs = mesh.fragments;
@@ -214,58 +462,36 @@ function buildPlayDic_Mount() {
 
     var mtx;
 
-    for (i = 0; i < currNodesMount.length; i++) {
-        var node = currNodesMount[i];
-        //var cc = Array.indexOf(frgs, node.dbId);
-        //var cc = $.inArray(node.dbId, frag2dbid);
-        //if (i != 1)
+    for (i = 0; i < currNodes_Mount.length; i++) {
+        var node = currNodes_Mount[i];
+       
+        var nodefrags = new Array()
+        searchTree(node, nodefrags);
+        //if (thisFrags != null)
         {
-            var nodefrags = new Array()
-            searchTree(node, nodefrags);
-            //if (thisFrags != null)
-            {
-                //store all fragments and the orignal matrix (position) of one parent node
-                var mtx = viewer3DMount.impl.getRenderProxy(viewer3DMount.model, nodefrags[0]).matrixWorld.elements;
+            //store all fragments and the orignal matrix (position) of one parent node
+            var mtx = viewer3DMount.impl.
+                getRenderProxy(viewer3DMount.model, nodefrags[0]).
+                matrixWorld.elements;
 
-                if (node.dbId in playDic) {
-                    playDic[node.dbId].push(nodefrags);
-                    playDic_pos[node.dbId].push(mtx);
-                }
-                else {
-                    playDic[node.dbId] = nodefrags;
-                    var corVs = new Array();
-                    corVs[0] = mtx[12];
-                    corVs[1] = mtx[13];
-                    corVs[2] = mtx[14];
-
-                    playDic_pos[node.dbId] = corVs;
-                } 
-
-                var xx = 0;
+            if (node.dbId in playDic) {
+                playDic[node.dbId].push(nodefrags);
+                playDic_pos[node.dbId].push(mtx);
             }
-            //moveaway(viewer3DMount, nodefrags);
-        }
+            else {
+                playDic[node.dbId] = nodefrags;
+                var corVs = new Array();
+                corVs[0] = mtx[12];
+                corVs[1] = mtx[13];
+                corVs[2] = mtx[14];
+
+                playDic_pos[node.dbId] = corVs;
+            } 
+
+            var xx = 0;
+        } 
     }
-}
-
-//backup function : camera changing
-function cameraChangedEventCB_Mount(evt) {
-
-    if (viewer3DMount) {
-
-        if (ismoving &&
-            currentfrgids) {
-            ismoving = false;
-        }
-    }
-   
-}
-
-//build the play dictionary  
-function buildPlayDic_Org() {
-    if (viewer3DOrg)
-        viewer3DOrg.getObjectTree(getObjectTreeCB_Org);
-}
+} 
 
 //find out all fragments of one parent object
 function searchTree(element, frags) {
@@ -281,65 +507,12 @@ function searchTree(element, frags) {
             }
 
         }
-    } else if (element.children != null) {
-        //var result = null;
+    } else if (element.children != null) { 
         for (var i = 0; i < element.children.length; i++) {
             searchTree(element.children[i], frags);
-        }
-        //return result;
-    }
-    //return null;
-}
-
-//generate the tree of the original viewer
-
-function getObjectTreeCB_Org(result) {
-
-    geometryItems_children = result.children;
-
-    for (i = 0; i < geometryItems_children.length; i++) {
-        {
-            //hard coded. store some objects for mounting.
-            allNodesOrg.push(geometryItems_children[i]);
-            var thisDbId = geometryItems_children[i];
-
-
-            if (thisDbId.name == "244752:1" ||
-                thisDbId.name == "244752:2" ||
-                //thisDbId.name == "51442:1" ||
-               thisDbId.name == "237648:1" ||
-                thisDbId.name == "47290:1"
-
-                )
-                {
-                currNodesOrg.push(geometryItems_children[i]);
-            }
-        }
-    }
-}
-
-//generate the tree of the mounting viewer
-function getObjectTreeCB_Mount(result) {
-
-    geometryItems_children = result.children;
-
-    for (i = 0; i < geometryItems_children.length; i++) {
-        {
-            //hard coded. store some objects for mounting.
-            var thisDbId = geometryItems_children[i];
-
-            if (thisDbId.name == "244752:1" ||
-                thisDbId.name == "244752:2" ||
-                //thisDbId.name == "51442:1" ||
-               thisDbId.name == "237648:1" ||
-                thisDbId.name == "47290:1"
-
-                ) {
-                currNodesMount.push(geometryItems_children[i]);
-            }
-        }
-    }
-} 
+        } 
+    } 
+}  
 
 // move the objects away along x,y,z
 function moveaway(viewer3D, frgid) {
@@ -389,20 +562,22 @@ function moveaway(viewer3D, frgid) {
 
 //selection event
 function onSelectedCallback_Mount(event) {
-    var msg = '';
-    if (event.dbIdArray.length > 0) {
 
-        //in moving status      
-        ismoving = true;
-        //get the original position data.
-        var corVs = playDic_pos[currNodesMount[currentIndex].dbId];
-       
-        //orignal x, y, z
-        stxx = corVs[0];
-        styy = corVs[1];
-        stzz = corVs[2];
+    if (startMount) { 
 
-          
+        var msg = '';
+        if (event.dbIdArray.length > 0) {
+
+            //in moving status      
+            ismoving = true;
+            //get the original position data.
+            var corVs = playDic_pos[currNodes_Mount[currentIndex].dbId];
+
+            //orignal x, y, z
+            stxx = corVs[0];
+            styy = corVs[1];
+            stzz = corVs[2]; 
+        }
     }
 
 }
@@ -520,7 +695,6 @@ function moveY(step) {
      isOK();
 }
 
-
 //move object in Z with one step
 function moveZ(step) {
   
@@ -550,3 +724,5 @@ function moveZ(step) {
     //check if current position is the correct position
      isOK();
 }
+
+//*******end functions for Viewer

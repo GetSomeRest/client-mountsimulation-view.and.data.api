@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Web.Configuration;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
 using RestSharp;
 
 
@@ -12,48 +12,25 @@ namespace MountSimulation
 {
     public partial class WebForm1 : System.Web.UI.Page
     {
-        //replace with your own comsumer key and secret
-        const String consumerKey = "";
-        const String secretKey = "";
-        const String strAgigee = "https://developer.api.autodesk.com";
-
-        RestClient _client = new RestClient(strAgigee);
-        String _token = "";
-
-        //if you want to provide a default URN from server side
-        //in current version, the URN is provided in client side.
-        string inputDocumentId = "urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dGVzdG53eHh4L0V4YW1wbGUubndk";
+        //view base url
+        static String baseUrl = WebConfigurationManager.AppSettings["ViewerBaseURL"];
+        // Viewing Service client key
+        static String _clientKey = WebConfigurationManager.AppSettings["ViewerClientKey"];
+        // Viewing service client secret
+        static String _secretKey = WebConfigurationManager.AppSettings["ViewerSecretKey"];
+        //default urn
+        static String _defaultURN = WebConfigurationManager.AppSettings["ViewerDefaultURN"];
 
 
+        RestClient _client = new RestClient(baseUrl);
+        
+     
         protected void Page_Load(object sender, EventArgs e)
         { 
-            //if the URN is provided from URL
-            if (Request.QueryString["myurn"] != null)
-                inputDocumentId = Request.QueryString["myurn"].ToString();
-
             authentication();
+            viewerDefaultURN.Value = _defaultURN;
         }
-
-        public string GetToken()
-        {
-            return _token;
-        }
-        public string GetDocumentId()
-        {
-            string docId;
-            if (!inputDocumentId.StartsWith("urn:"))
-            {
-                docId = "urn:" + inputDocumentId;
-            }
-            else
-            {
-                docId = inputDocumentId;
-            }
-
-            return docId;
-
-        }
-
+ 
         // authenticate and produce the token
         bool authentication()
         {
@@ -61,8 +38,8 @@ namespace MountSimulation
             authReq.Resource = "authentication/v1/authenticate";
             authReq.Method = Method.POST;
             authReq.AddHeader("Content-Type", "application/x-www-form-urlencoded");
-            authReq.AddParameter("client_id", consumerKey);
-            authReq.AddParameter("client_secret", secretKey);
+            authReq.AddParameter("client_id", _clientKey);
+            authReq.AddParameter("client_secret", _secretKey);
             authReq.AddParameter("grant_type", "client_credentials");
 
             IRestResponse result = _client.Execute(authReq);
@@ -74,9 +51,9 @@ namespace MountSimulation
                 responseString = responseString.Substring(
                     index, len - index - 1);
                 int index2 = responseString.IndexOf("\"");
-                _token = responseString.Substring(0, index2);
+                
                 //store the token to the control of web page.
-                viewertoken.Value = _token;
+                viewertoken.Value = responseString.Substring(0, index2); ;
                 return true;
 
             }

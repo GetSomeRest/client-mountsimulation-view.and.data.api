@@ -1,3 +1,5 @@
+# Deprecated sample - not maintained anymore (Summer 2016)
+
 #Client sample - mount simulation
 
 ##Update
